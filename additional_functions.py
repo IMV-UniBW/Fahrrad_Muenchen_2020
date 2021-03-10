@@ -6,12 +6,12 @@ Created on Thu Feb 18 11:28:15 2021
 """
 
 def remove_brackets(name):
-    if name.find('[') >= 0:
-        i_1 = name.find('[')
-        i_2 = name.find(']')
-        new_name = name[:i_1] + name[i_2+1:]
-    else:
-        new_name = name
+    new_name = name
+    while '[' in new_name:
+        if new_name.find('[') >= 0:
+            i_1 = new_name.find('[')
+            i_2 = new_name.find(']')
+            new_name = new_name[:i_1] + new_name[i_2+1:]
     return new_name
 
 def make_variable_list(names):
