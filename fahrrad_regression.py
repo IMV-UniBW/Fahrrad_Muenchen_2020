@@ -96,8 +96,13 @@ for i in range(len(df)):
     if day > 4:
         df.wochenende[i] = 1 
     else:
-        df.wochenende[i] = 0        
-            
+        df.wochenende[i] = 0     
+        
+df['werktag'] = df.wochenende + df.feiertag
+df.werktag[df.werktag > 0] = 1
+df.werktag = (df.werktag - 1) *(-1)   
+
+
 # season
 def get_meteo_season(date):
     if date.month in [12,1,2]:
@@ -273,7 +278,7 @@ sns.scatterplot(data=zdf, x="max_temp", y="gesamt3", hue = 'jahreszeit')
 #--------------------------------------------------------------------
 # Model selection: Multicollinearity
 #--------------------------------------------------------------------
-features = "+".join(['max_temp', 'cniederschlag', 'bewoelkung', 'sonnenstunden', 'feiertag'])
+features = "+".join(['max_temp', 'cniederschlag', 'bewoelkung', 'sonnenstunden', 'werktag'])
 y, X = dmatrices('gesamt3 ~ ' + features, train, return_type='dataframe')
 vif = pd.DataFrame()
 vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
@@ -281,7 +286,7 @@ vif["features"] = X.columns
 vif.round(1)
 
 # we are thwoing out sonnenstunden because vif > 4
-features = "+".join(['max_temp', 'cniederschlag', 'bewoelkung', 'feiertag'])
+features = "+".join(['max_temp', 'cniederschlag', 'bewoelkung', 'werktag'])
 y, X = dmatrices('gesamt3 ~ ' + features, train, return_type='dataframe')
 vif = pd.DataFrame()
 vif["VIF Factor"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
@@ -295,16 +300,16 @@ vif.round(1)
 i = 0
 iterations_log = ""
 # 1 fit initial full model
-rtrain = train[['gesamt3', 'max_temp', 'cniederschlag', 'bewoelkung', 'sonnenstunden', 'feiertag', 'wochenende']] # get variables of interest
+rtrain = train[['gesamt3', 'max_temp', 'cniederschlag', 'bewoelkung', 'werktag']] # get variables of interest
 features = "+".join(rtrain.columns[1:])
 y = 'gesamt3'
 first_model = ols(y + '~' + features, data=rtrain).fit()  # fit complete model
 # we are omitting bewoelkung
 names_0 = dict(first_model.params)
 names = make_variable_list(list(names_0.keys()))
-names.remove("bewoelkung")
-new_formula = make_formula(names)
-main_effect_model = ols(new_formula, data=rtrain).fit()  # fit complete model
+#names.remove("bewoelkung")
+#new_formula = make_formula(names)
+#main_effect_model = ols(new_formula, data=rtrain).fit()  # fit complete model
 
 #--------------------------------------------------------------------
 # Model Fitting: Interaction Effects
@@ -328,8 +333,16 @@ best_model_so_far = ols(new_formula, data=rtrain).fit()
 # select worst interaction effect
 dict_pvalues = dict(best_model_so_far.pvalues[1:])
 dict_pvalues_interactions = {i: dict_pvalues[i] for i in dict_pvalues.keys() if ':' in i}
-maxPval = dict_pvalues_interactions[max(dict_pvalues_interactions)]
-worst_param =  remove_brackets(max(dict_pvalues_interactions))
+# only keep worst interaction for categorical
+dict_pvalues_interactions_new = dict()
+for k in dict_pvalues_interactions.keys():
+    if not remove_brackets(k) in dict_pvalues_interactions_new:
+        dict_pvalues_interactions_new[remove_brackets(k)] = dict_pvalues_interactions[k]
+    else:
+        if dict_pvalues_interactions_new[remove_brackets(k)] > dict_pvalues_interactions[k]:
+            dict_pvalues_interactions_new[remove_brackets(k)] = dict_pvalues_interactions[k]
+maxPval = max(dict_pvalues_interactions_new.values())
+worst_param =  max(dict_pvalues_interactions_new, key=dict_pvalues_interactions_new.get)
 names.remove(worst_param)
 iterations_log += "\n ####### \n" + str(i) +  "AIC: "+ str(best_model_so_far.aic) +"\nworst p: "+ str(maxPval) + "\nworst B: " + str(worst_param)
 print("Character Variables (Dropped):" + str(worst_param))
@@ -340,16 +353,22 @@ i += 1
 new_formula = make_formula(names)
 next_best_model = ols(new_formula, data=rtrain).fit() # fit model without worst parameter
 # compare models: is it better without worst parameter?
-while next_best_model.bic < best_model_so_far.bic and len(dict_pvalues_interactions)> 0:
+while next_best_model.aic < best_model_so_far.aic and len(dict_pvalues_interactions)> 0:
         iterations_log+= 'Dropped \n'
         best_model_so_far = next_best_model
-        # remove worst interaction for next model
-        dict_pvalues = dict(best_model_so_far.pvalues[1:])
-        dict_pvalues_interactions = {i: dict_pvalues[i] for i in dict_pvalues.keys() if ':' in i}
-        try: 
-            maxPval = dict_pvalues_interactions[max(dict_pvalues_interactions)]
-            worst_param =  remove_brackets(max(dict_pvalues_interactions))
-            iterations_log += "\n ####### \n" + str(i) +  "AIC: "+ str(best_model_so_far.aic) +"\nworst p: "+ str(maxPval) + "\nworst B: " + str(worst_param)
+        try:
+            # remove worst interaction for next model
+            dict_pvalues = dict(best_model_so_far.pvalues[1:])
+            dict_pvalues_interactions = {i: dict_pvalues[i] for i in dict_pvalues.keys() if ':' in i}
+            dict_pvalues_interactions_new = dict()
+            for k in dict_pvalues_interactions.keys():
+                if not remove_brackets(k) in dict_pvalues_interactions_new:
+                    dict_pvalues_interactions_new[remove_brackets(k)] = dict_pvalues_interactions[k]
+                else:
+                    if dict_pvalues_interactions_new[remove_brackets(k)] > dict_pvalues_interactions[k]:
+                        dict_pvalues_interactions_new[remove_brackets(k)] = dict_pvalues_interactions[k]
+            maxPval = max(dict_pvalues_interactions_new.values())
+            worst_param =  max(dict_pvalues_interactions_new, key=dict_pvalues_interactions_new.get)
             names.remove(worst_param)
             print("Character Variables (Dropped):" + str(worst_param))
             # 4 fit next model
@@ -375,25 +394,17 @@ pvals = dict(final_model.pvalues)
 # Interpretation
 #--------------------------------------------------------------------
 # Feiertag Main effect
-sns.boxplot(data=train, x="feiertag", y="gesamt3", hue = 'cniederschlag')
-# kein regen
-B_feiertag = final_model.params[list(parameters.keys()).index('feiertag[T.1]')] 
-D_feiertag = (B_feiertag) **3
-print("Pro Tag sind an einem Feiertag " + str(D_feiertag) + " weniger Fahrräder auf den Straßen, wenn es nicht regnet und alle anderen Bedingungen gleich bleiben")
+plt.figure()
+sns.scatterplot(data=train, x="max_temp", y="gesamt3", hue = 'werktag')
+# keine Sonne
+B_werktag = final_model.params[list(parameters.keys()).index('werktag[T.1]')]
+D_werktag = (B_werktag) **3
+print("Pro Tag sind an einem Werktag " + str(D_werktag) + " mehr Fahrräder auf den Straßen, bei 0 °C und wenn alle anderen Bedingungen gleich bleiben")
 
-#wenig regen
-B_feiertag = final_model.params[list(parameters.keys()).index('feiertag[T.1]')] + final_model.params[list(parameters.keys()).index('feiertag[T.1]:cniederschlag[T.1]')]
-D_feiertag = (B_feiertag) **3
-print("Pro Tag sind an einem Feiertag " + str(D_feiertag) + " weniger Fahrräder auf den Straßen, wenn es wenig regnet und alle anderen Bedingungen gleich bleiben")
-
-#wenig regen
-B_feiertag = final_model.params[list(parameters.keys()).index('feiertag[T.1]')] + final_model.params[list(parameters.keys()).index('feiertag[T.1]:cniederschlag[T.2]')]
-D_feiertag = (B_feiertag) **3
-print("Pro Tag sind an einem Feiertag " + str(D_feiertag) + " weniger Fahrräder auf den Straßen, wenn es mittelviel regnet und alle anderen Bedingungen gleich bleiben")
-
-B_feiertag = final_model.params[list(parameters.keys()).index('feiertag[T.1]')] + final_model.params[list(parameters.keys()).index('feiertag[T.1]:cniederschlag[T.3]')]
-D_feiertag = (B_feiertag) **3
-print("Pro Tag sind an einem Feiertag " + str(D_feiertag) + " weniger Fahrräder auf den Straßen, wenn es stark regnet und alle anderen Bedingungen gleich bleiben")
+# mittelviel Sonne
+B_werktag = final_model.params[list(parameters.keys()).index('werktag[T.1]')] + final_model.params[list(parameters.keys()).index('werktag[T.1]:max_temp')] *  np.mean(train.max_temp)
+D_werktag = (B_werktag) **3
+print("Pro Tag sind an einem Feiertag " + str(D_werktag) + " weniger Fahrräder auf den Straßen bei durchschnittlicher Temperatur und alle anderen Bedingungen gleich bleiben")
 
 
 # Temp Main effect
