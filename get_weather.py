@@ -17,7 +17,7 @@ from datetime import datetime
 # -------------------------------------------------------------
 # set variables
 # -------------------------------------------------------------
-years = ['2017']#, '2018', '2019', '2020']
+years = ['2017','2018', '2019', '2020']
 weeks = range(1,53+1)
 columns = ['Datum','Zeit','Temperatur', 'Luftfeuchte', 'Luftdruck', 
            'Regen', 'Windgeschw.', 'Windrichtung', 'Sonnenschein', 
@@ -59,7 +59,6 @@ for year in years:
 # -------------------------------------------------------------
 # reset index
 df_weather = df_weather.reset_index(drop=True)
-
 
 
 # -------------------------------------------------------------
