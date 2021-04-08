@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
+b# -*- coding: utf-8 -*-
 """
 Created on Sat Mar 13 19:00:35 2021
-
+import urllib
 @author: katha
 """
 # -------------------------------------------------------------
@@ -59,10 +59,90 @@ for year in years:
 # -------------------------------------------------------------
 # reset index
 df_weather = df_weather.reset_index(drop=True)
+# remove units and replace decimal comma
+# temperature
+unit = "°C"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Temperatur]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Temperatur = res2
+
+# Luftfeuchte
+unit = " %"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Luftfeuchte]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Luftfeuchte = res2
 
 
+# Luftdruck
+unit = " hPa"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Luftdruck]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Luftdruck = res2
+
+#Regen
+unit = " l/m²"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Regen]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Regen = res2
+
+# Windgeschw.
+unit = " km/h"
+res = [sub.replace(unit, "").strip() for sub in df_weather['Windgeschw.']]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Windgeschwindigkeit = res2
+del df_weather['Windgeschw.']
+
+# Sonnenschein
+unit = " h"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Sonnenschein]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather['Sonnenschein'] = res2
+
+
+# UV-I
+unit = " UV-I"
+res = [sub.replace(unit, "").strip() for sub in df_weather['UV-Index']]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather['UV'] = res2
+del df_weather['UV-I']
+
+# Solarstrahl
+unit = " W/m²"
+res = [sub.replace(unit, "").strip() for sub in df_weather['Solarstrahl.']]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Solarstrahlung = res2
+del df_weather['Solarstrahl.']
+
+# Taupunkt
+unit = " °C"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Taupunkt]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Taupunkt = res2
+
+# Windchill
+unit = " °C"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Windchill]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Windchill = res2
+
+# Windböen
+unit = " km/h"
+res = [sub.replace(unit, "").strip() for sub in df_weather.Windböen]
+comma = ','
+res2 = [sub.replace(comma, ".").strip() for sub in res]
+df_weather.Windböen = res2
 # -------------------------------------------------------------
 # save
 # -------------------------------------------------------------
-df_weather.to_csv('weather.csv', index=False)      
+df_weather.to_csv('weather2.csv', index=False)      
  

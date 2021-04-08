@@ -35,3 +35,30 @@ def remove_higher_order_interactions(names):
         if p.count(':') > 1:
             new_names.remove(p)
     return new_names
+
+def make_datetime(date_column, time_column):
+    import pandas as pd
+    import datetime
+    df_date = pd.DataFrame({'datum' : []})
+    for i, date in enumerate(date_column):
+            # date
+        parts = date.split(".")
+        month = int(parts[1])
+        parts.remove(parts[1])
+            # find year
+        for p in parts:
+            if len(p) == 4:
+                year = int(p)
+                parts.remove(p)
+        day = int(parts[0])   
+        # time
+        time_parts = time_column[i].split(':')
+        if int(time_parts[1]) in [30, 45]:
+            if int(time_parts[0]) + 1 == 24:
+                h = 0
+            else:
+                h = int(time_parts[0]) + 1
+        else:
+            h = int(time_parts[0])           
+        df_date.loc[i, ['datum']] = datetime.datetime(year=year, month=month, day=day, hour = h)
+    return df_date
