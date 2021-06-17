@@ -15,15 +15,13 @@ import pandas as pd
 # ------------------
 # import via API
 # ------------------
-
 url = 'https://www.opengov-muenchen.de/api/3/action/package_search?q=Raddauerz%C3%A4hlstellen&rows=60'
 page = requests.get(url)
 jpage = page.json()['result']['results']
-url_list = []
-df_fahrrad = pd.read_csv(jpage[1]['resources'][0]['url'])
-df_fahrrad[['zeit']] = make_datetime(df_fahrrad.datum, df_fahrrad.uhrzeit_start)
+df_fahrrad = pd.read_csv(jpage[1]['resources'][0]['url']) # juni 2017
+df_fahrrad[['Zeit']] = make_datetime(df_fahrrad.datum, df_fahrrad.uhrzeit_start)
 # merge
-for i, j in enumerate(jpage[:3]):
+for i, j in enumerate(jpage):
     if i > 1:
         # url_list.append(j['resources'][0]['url'])
         df_temp = pd.read_csv(j['resources'][0]['url'])
@@ -31,7 +29,7 @@ for i, j in enumerate(jpage[:3]):
             df_temp = pd.read_csv(j['resources'][0]['url'], sep=';')
         elif len(df_temp.columns) == 12:
             df_temp = pd.read_csv(j['resources'][1]['url'])
-        df_temp[['zeit']] = make_datetime(df_temp.datum, df_temp.uhrzeit_start)
+        df_temp[['Zeit']] = make_datetime(df_temp.datum, df_temp.uhrzeit_start)
         # merge files
         df_fahrrad = df_fahrrad.append(df_temp)
 
@@ -60,8 +58,9 @@ for i, j in enumerate(jpage[:3]):
 # del df_fahrrad['uhrzeit_ende']
 # del df_fahrrad['datum']
 
-df_fahrrad_summarized = df_fahrrad.groupby(['zeit', 'zaehlstelle'], as_index=False).agg({"gesamt": "sum"})
+df_fahrrad_summarized = df_fahrrad.groupby(['Zeit', 'zaehlstelle'], as_index=False).agg({"gesamt": "sum"})
 df_fahrrad_summarized = df_fahrrad_summarized.reset_index(drop=True)
 
-
+df_fahrrad_summarized.to_csv('radzaehldaten_stunde.csv', index=False)      
+df_fahrrad_summarized.to_pickle('radzaehldaten_stunde')
 

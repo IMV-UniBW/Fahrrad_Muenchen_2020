@@ -1,4 +1,4 @@
-b# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Sat Mar 13 19:00:35 2021
 import urllib
@@ -17,7 +17,7 @@ from datetime import datetime
 # -------------------------------------------------------------
 # set variables
 # -------------------------------------------------------------
-years = ['2017','2018', '2019', '2020']
+years = ['2017','2018', '2019', '2020', '2021']
 weeks = range(1,53+1)
 columns = ['Datum','Zeit','Temperatur', 'Luftfeuchte', 'Luftdruck', 
            'Regen', 'Windgeschw.', 'Windrichtung', 'Sonnenschein', 
@@ -65,14 +65,14 @@ unit = "°C"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Temperatur]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Temperatur = res2
+df_weather['Temperatur'] = res2
 
 # Luftfeuchte
 unit = " %"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Luftfeuchte]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Luftfeuchte = res2
+df_weather['Luftfeuchte'] = res2
 
 
 # Luftdruck
@@ -80,21 +80,21 @@ unit = " hPa"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Luftdruck]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Luftdruck = res2
+df_weather['Luftdruck'] = res2
 
 #Regen
 unit = " l/m²"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Regen]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Regen = res2
+df_weather['Regen'] = res2
 
 # Windgeschw.
 unit = " km/h"
 res = [sub.replace(unit, "").strip() for sub in df_weather['Windgeschw.']]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Windgeschwindigkeit = res2
+df_weather['Windgeschwindigkeit'] = res2
 del df_weather['Windgeschw.']
 
 # Sonnenschein
@@ -111,14 +111,14 @@ res = [sub.replace(unit, "").strip() for sub in df_weather['UV-Index']]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
 df_weather['UV'] = res2
-del df_weather['UV-I']
+del df_weather['UV-Index']
 
 # Solarstrahl
 unit = " W/m²"
 res = [sub.replace(unit, "").strip() for sub in df_weather['Solarstrahl.']]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Solarstrahlung = res2
+df_weather['Solarstrahlung'] = res2
 del df_weather['Solarstrahl.']
 
 # Taupunkt
@@ -126,23 +126,44 @@ unit = " °C"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Taupunkt]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Taupunkt = res2
+df_weather['Taupunkt'] = res2
 
 # Windchill
 unit = " °C"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Windchill]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Windchill = res2
+df_weather['Windchill'] = res2
 
 # Windböen
 unit = " km/h"
 res = [sub.replace(unit, "").strip() for sub in df_weather.Windböen]
 comma = ','
 res2 = [sub.replace(comma, ".").strip() for sub in res]
-df_weather.Windböen = res2
+df_weather['Windböen'] = res2
+
+# time
+df_weather['Zeit'] = make_datetime(df_weather.Datum, df_weather.Zeit)
+del df_weather['Datum']
+
+
+# make numeric
+df_weather["Temperatur"] = pd.to_numeric(df_weather["Temperatur"], downcast="float")
+df_weather["Luftfeuchte"] = pd.to_numeric(df_weather["Luftfeuchte"], downcast="float")
+df_weather["Luftdruck"] = pd.to_numeric(df_weather["Luftdruck"], downcast="float")
+df_weather["Regen"] = pd.to_numeric(df_weather["Regen"], downcast="float")
+df_weather["Sonnenschein"] = pd.to_numeric(df_weather["Sonnenschein"], downcast="float")
+df_weather["Taupunkt"] = pd.to_numeric(df_weather["Taupunkt"], downcast="float")
+df_weather["Windchill"] = pd.to_numeric(df_weather["Windchill"], downcast="float")
+df_weather["Windböen"] = pd.to_numeric(df_weather["Windböen"], downcast="float")
+df_weather["Windgeschwindigkeit"] = pd.to_numeric(df_weather["Windgeschwindigkeit"], downcast="float")
+df_weather["UV"] = pd.to_numeric(df_weather["UV"], downcast="float")
+df_weather["Solarstrahlung"] = pd.to_numeric(df_weather["Solarstrahlung"], downcast="float")
+
+
+
 # -------------------------------------------------------------
 # save
 # -------------------------------------------------------------
-df_weather.to_csv('weather2.csv', index=False)      
- 
+df_weather.to_csv('weather.csv', index=False)      
+df_weather.to_pickle('weather')

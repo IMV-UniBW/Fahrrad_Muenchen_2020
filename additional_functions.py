@@ -26,7 +26,7 @@ def make_variable_list(names):
     return unique_names
 
 def make_formula(my_list):
-    formula = 'gesamt3 ~' + '+'.join(my_list)
+    formula = 'gesamt ~' + '+'.join(my_list)
     return formula
 
 def remove_higher_order_interactions(names):
